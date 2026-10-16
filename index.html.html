@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Ascending">
+<meta name="theme-color" content="#101828">
+<title>Ascending</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700&display=swap">
+<style>
+:root{--bg:#f3f5f9;--fg:#101828;--mut:#64708a;--card:#fff;--line:#d9dfea;--acc:#c98412;--accfg:#fff;--ok:#23915f;--tick:#cdd4e2;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#101828;--fg:#eef2f8;--mut:#8d99b3;--card:#1a2438;--line:#29344d;--acc:#f2b544;--accfg:#101828;--ok:#2fb47c;--tick:#2a3552;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#101828;--fg:#eef2f8;--mut:#8d99b3;--card:#1a2438;--line:#29344d;--acc:#f2b544;--accfg:#101828;--ok:#2fb47c;--tick:#2a3552;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:'Outfit',system-ui,-apple-system,'Segoe UI',sans-serif;-webkit-tap-highlight-color:transparent}
+main{max-width:480px;margin:0 auto;padding:20px 18px 48px}
+button{font:inherit;color:inherit;cursor:pointer}
+h1{font-weight:300;font-size:2.1rem;letter-spacing:.14em;text-align:center;margin:18px 0 6px}
+h2{font-weight:500;font-size:1.5rem;margin:6px 0 2px}
+h3{font-weight:500;font-size:1.05rem;margin:26px 0 10px}
+.mut{color:var(--mut);margin:0}
+.top{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.back{background:none;border:1px solid var(--line);border-radius:999px;padding:7px 14px}
+.ring{position:relative;display:block;width:100%;max-width:340px;aspect-ratio:1;margin:18px auto 8px;background:none;border:0;padding:0}
+.ring svg{width:100%;height:100%}
+.ring line{stroke:var(--tick);stroke-width:1.3;stroke-linecap:round}
+.ring line.on{stroke:var(--acc)}
+.ring .c{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring b{font-size:5rem;line-height:1;font-weight:700}
+.ring span{color:var(--mut);margin-top:6px}
+.status{text-align:center;margin:10px 0 22px}
+.row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.btn{background:var(--acc);color:var(--accfg);border:0;border-radius:12px;padding:12px 18px;font-weight:500}
+.btn.alt{background:none;color:var(--fg);border:1px solid var(--line)}
+.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.grid .wd{text-align:center;color:var(--mut);font-size:.8rem;padding-bottom:2px}
+.cell{aspect-ratio:1;border-radius:10px;background:var(--card);border:1px solid var(--line);position:relative;padding:0;font-size:.95rem}
+.cell.done{background:var(--ok);border-color:transparent;color:#fff}
+.cell.today{outline:2px solid var(--acc);outline-offset:2px;font-weight:700}
+.cell.has::after{content:"";position:absolute;left:50%;bottom:5px;width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:var(--acc)}
+ul{list-style:none;margin:12px 0;padding:0}
+li{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px}
+li span{flex:1;overflow-wrap:anywhere}
+li.d span{color:var(--mut);text-decoration:line-through}
+.chk{width:26px;height:26px;border-radius:50%;border:2px solid var(--mut);background:none;padding:0;flex:none;position:relative}
+li.d .chk{background:var(--ok);border-color:var(--ok)}
+li.d .chk::after{content:"";position:absolute;left:8px;top:3px;width:6px;height:12px;border:solid #fff;border-width:0 2.5px 2.5px 0;transform:rotate(45deg)}
+.chk:disabled{cursor:default}
+.x{background:none;border:0;color:var(--mut);font-size:1.4rem;line-height:1;padding:0 4px}
+.add{display:flex;gap:8px}
+.add input{flex:1;min-width:0;font:inherit;color:var(--fg);background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.add button{background:var(--acc);color:var(--accfg);border:0;border-radius:12px;padding:0 16px;font-weight:500}
+.wk{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:6px 14px 14px;margin-top:14px}
+.wk h3{margin:10px 0 0}
+button:focus-visible,input:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<script>
+var K='ascending-v1',S=null;
+try{S=JSON.parse(localStorage.getItem(K))}catch(e){}
+S=S||{start:null,days:{},planned:''};
+function save(){try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}}
+var pad=function(n){return String(n).padStart(2,'0')};
+var key=function(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())};
+var parse=function(k){var p=k.split('-');return new Date(+p[0],p[1]-1,+p[2])};
+var add=function(d,n){var x=new Date(d);x.setDate(x.getDate()+n);return x};
+var today=function(){var d=new Date();return new Date(d.getFullYear(),d.getMonth(),d.getDate())};
+var diff=function(a,b){return Math.round((a-b)/864e5)};
+var full=function(k){var t=S.days[k]||[];return t.length>0&&t.every(function(x){return x.d})};
+var esc=function(s){return s.replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})};
+var DF=new Intl.DateTimeFormat('de-DE',{weekday:'long',day:'numeric',month:'long'});
+var MF=new Intl.DateTimeFormat('de-DE',{month:'long',year:'numeric'});
+var WF=new Intl.DateTimeFormat('de-DE',{weekday:'long',day:'numeric',month:'long'});
+
+function check(){
+  var t=today();
+  if(!S.start)S.start=key(t);
+  var d=parse(S.start);
+  while(d<t){if(!full(key(d))){S.start=key(t);break}d=add(d,1)}
+  save();
+}
+function streak(){var t=today();return diff(t,parse(S.start))+(full(key(t))?1:0)}
+
+var view={n:'home'},focusKey=null;
+
+function list(k,edit,tog){
+  var ts=S.days[k]||[];
+  if(!ts.length&&!edit)return '<p class="mut">Keine Aufgaben eingetragen.</p>';
+  return '<ul>'+ts.map(function(x,i){
+    return '<li class="'+(x.d?'d':'')+'"><button class="chk" '+(tog?'data-act="toggle" data-k="'+k+'" data-i="'+i+'"':'disabled')+' aria-label="Erledigt"></button><span>'+esc(x.t)+'</span>'+(edit?'<button class="x" data-act="del" data-k="'+k+'" data-i="'+i+'" aria-label="Löschen">×</button>':'')+'</li>';
+  }).join('')+'</ul>';
+}
+function adder(k){
+  return '<div class="add"><input id="in-'+k+'" data-k="'+k+'" placeholder="Neue Aufgabe" maxlength="80" enterkeyhint="done"><button data-act="add" data-k="'+k+'">Hinzufügen</button></div>';
+}
+
+function home(){
+  var n=Math.min(streak(),365),R=118,tk=key(today()),ts=S.days[tk]||[],dn=ts.filter(function(x){return x.d}).length,ticks='';
+  for(var i=0;i<365;i++){
+    var a=i/365*2*Math.PI-Math.PI/2,c=Math.cos(a),s=Math.sin(a);
+    ticks+='<line x1="'+(150+c*(R-10)).toFixed(1)+'" y1="'+(150+s*(R-10)).toFixed(1)+'" x2="'+(150+c*R).toFixed(1)+'" y2="'+(150+s*R).toFixed(1)+'" class="'+(i<n?'on':'')+'"/>';
+  }
+  var st=ts.length?'Heute: '+dn+' von '+ts.length+' erledigt':'Für heute ist noch nichts geplant';
+  return '<h1>Ascending</h1>'+
+  '<button class="ring" data-act="cal" aria-label="Kalender öffnen, '+n+' von 365 Tagen"><svg viewBox="0 0 300 300" aria-hidden="true">'+ticks+'</svg><div class="c"><b>'+n+'</b><span>'+(n>=365?'365 Tage geschafft':'von 365 Tagen in Folge')+'</span></div></button>'+
+  '<p class="status mut">'+st+'</p>'+
+  '<div class="row"><button class="btn" data-act="day" data-k="'+tk+'">Heutige Liste</button><button class="btn alt" data-act="week">Woche planen</button></div>';
+}
+
+function cal(){
+  var s=parse(S.start),t=today(),tk=key(t),out='',cur='';
+  out+='<div class="top"><button class="back" data-act="home">Zurück</button></div><h2>Dein Weg</h2><p class="mut">Tag '+(diff(t,s)+1)+' von 365</p>';
+  var wd='<div class="grid">'+['Mo','Di','Mi','Do','Fr','Sa','So'].map(function(w){return '<div class="wd">'+w+'</div>'}).join('')+'</div>';
+  out+='<div style="margin-top:16px">'+wd+'</div>';
+  var open=false;
+  for(var i=0;i<365;i++){
+    var d=add(s,i),k=key(d),m=MF.format(d);
+    if(m!==cur){
+      if(open)out+='</div>';
+      cur=m;open=true;
+      out+='<h3>'+m+'</h3><div class="grid">';
+      for(var b=0;b<(d.getDay()+6)%7;b++)out+='<div></div>';
+    }
+    var cls='cell';
+    if(d<t)cls+=' done';
+    else if(k===tk&&full(k))cls+=' done';
+    if(k===tk)cls+=' today';
+    if(d>t&&(S.days[k]||[]).length)cls+=' has';
+    out+='<button class="'+cls+'" data-act="day" data-k="'+k+'" aria-label="'+DF.format(d)+'">'+d.getDate()+'</button>';
+  }
+  return out+'</div>';
+}
+
+function day(k){
+  var t=today(),tk=key(t),d=parse(k),past=d<t,isT=k===tk,ts=S.days[k]||[],dn=ts.filter(function(x){return x.d}).length,no=diff(d,parse(S.start))+1;
+  var sub=(no>=1&&no<=365?'Tag '+no+' von 365 · ':'')+(past?'Vergangener Tag: '+dn+' von '+ts.length+' erledigt':isT?dn+' von '+ts.length+' erledigt':'Kommender Tag: Aufgaben planen');
+  return '<div class="top"><button class="back" data-act="cal">Kalender</button></div><h2>'+DF.format(d)+'</h2><p class="mut">'+sub+'</p>'+
+    list(k,!past,isT)+(past?'':adder(k));
+}
+
+function week(){
+  var t=today(),mon=add(t,((8-t.getDay())%7)||7),out='<div class="top"><button class="back" data-act="home">Zurück</button></div><h2>Nächste Woche planen</h2><p class="mut">Trage für jeden Tag ein, was du schaffen willst.</p>';
+  for(var i=0;i<7;i++){
+    var d=add(mon,i),k=key(d);
+    out+='<section class="wk"><h3>'+WF.format(d)+'</h3>'+list(k,true,false)+adder(k)+'</section>';
+  }
+  return out+'<div class="row" style="margin-top:20px"><button class="btn" data-act="weekdone">Fertig</button></div>';
+}
+
+function render(){
+  check();
+  var h=view.n==='cal'?cal():view.n==='day'?day(view.k):view.n==='week'?week():home();
+  document.getElementById('app').innerHTML=h;
+  if(focusKey){var e=document.getElementById('in-'+focusKey);if(e)e.focus();focusKey=null}
+}
+
+function addTask(k){
+  var el=document.getElementById('in-'+k),v=el?el.value.trim():'';
+  if(v){(S.days[k]=S.days[k]||[]).push({t:v,d:false});save()}
+  focusKey=k;
+}
+
+document.addEventListener('click',function(e){
+  var b=e.target.closest('[data-act]');
+  if(!b||b.disabled)return;
+  var a=b.dataset.act,k=b.dataset.k,i=+b.dataset.i;
+  if(a==='home')view={n:'home'};
+  else if(a==='cal')view={n:'cal'};
+  else if(a==='day')view={n:'day',k:k};
+  else if(a==='week')view={n:'week'};
+  else if(a==='weekdone'){S.planned=key(today());save();view={n:'home'}}
+  else if(a==='toggle'){S.days[k][i].d=!S.days[k][i].d;save()}
+  else if(a==='del'){S.days[k].splice(i,1);save()}
+  else if(a==='add')addTask(k);
+  var nav=['home','cal','day','week','weekdone'].indexOf(a)>-1;
+  render();
+  if(nav)window.scrollTo(0,0);
+});
+document.addEventListener('keydown',function(e){
+  if(e.key==='Enter'&&e.target.matches('.add input')){addTask(e.target.dataset.k);render()}
+});
+document.addEventListener('visibilitychange',function(){if(!document.hidden)render()});
+
+check();
+if(today().getDay()===0&&S.planned!==key(today()))view={n:'week'};
+render();
+</script>
+</body>
+</html>
